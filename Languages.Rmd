@@ -1,0 +1,206 @@
+---
+title: "Top Spoken Languages Worldwide"
+author: "Chizurum Agomoh"
+date: "2023-03-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, include=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(patchwork)
+library(maps)
+library(dplyr)
+library(socviz)
+library(ggthemes)
+library(ggplot2)
+```
+
+# About Dataset
+
+## Context
+
+Note that it is difficult to say what makes a language a langauge as opposed to a dialect. Chinese and Arabic are often categorized as individual languages, however, they each consist of multiple distinct varieties that are mutually unintelligible. Due to these differences between the varieties, some linguists consider these languages to be better viewed as a collection of related dialects or language families, rather than a single language. These language families also have different branches under them.
+
+## Content
+
+In this Dataset we have the complete list of the Most Spoken Languages in the World (in millions)
+
+```{r, message=FALSE, echo=FALSE}
+#Pre-process Dataset
+
+dataset <- read.csv("Languages.csv")
+dataset <- dataset[, -1] 
+dataset <- data.frame(dataset)
+```
+
+## Head of Dataset
+
+```{r,  message=FALSE, echo=FALSE}
+head(dataset)
+```
+
+## Summary of Dataset
+
+```{r, message=FALSE, echo=FALSE}
+summary(dataset)
+```
+
+## Column names
+
+```{r, message=FALSE, echo=FALSE}
+names(dataset)
+```
+
+```{r, message=FALSE, echo=FALSE}
+# Data Cleaning
+
+# Replace discrepancies with 0 in all columns
+dataset[] <- lapply(dataset, function(x) gsub("—", "0", x))
+dataset[] <- lapply(dataset, function(x) gsub("0\\[a]|0\\[(\\d+)\\]", "0", x))
+
+# Convert values from millions to their numeric format
+dataset$First.language.L1..speakers <- as.numeric(gsub("million", "", dataset$First.language.L1..speakers)) * 1000000
+dataset$Second.language.L2..speakers <- as.numeric(gsub("million\\[(\\d+)\\]", "", dataset$Second.language.L2..speakers)) * 1000000
+dataset$Total.speakers.L1.L2. <- as.numeric(gsub("million", "", dataset$Total.speakers.L1.L2.)) * 1000000
+
+```
+
+## Cleaned Dataset
+
+```{r, message=FALSE, echo=FALSE}
+head(dataset)
+```
+
+# Top 10 Languages Worldwide (Based on total number of speakers)
+
+```{r, message=FALSE, echo=FALSE, fig.cap= "Figure 1: Top 10 Languages Worldwide"}
+
+top10 <- dataset %>%
+  select(Language, Total.speakers.L1.L2.) %>%
+  arrange(desc(Total.speakers.L1.L2.)) %>%
+  head(10)
+top10_colors <- c("hotpink", "yellow", "#00FFFF", "#7FFFD4", "red", "#F5F5DC", "#FFE4C4", "#000000", "green", "#0000FF")
+
+top10 <- ggplot(top10, aes(x = Language, y = Total.speakers.L1.L2.)) +
+  geom_bar(stat = "identity", fill = top10_colors) +
+  ggtitle("Top 10 Languages Worldwide") +
+  xlab("LANGUAGE") +
+  ylab("TOTAL SPEAKERS (in millions)") +
+  scale_x_discrete(labels = c("Bengali", "English", "French", "Hindi", "Chinese", "Arabic", "Portuguese", "Russian", "Spanish", "Urdu")) +
+  scale_y_continuous(labels = function(x) {format(x, scientific = FALSE, big.mark = ",")}) +
+  theme(plot.title = element_text(face = "bold.italic", size = 17, hjust = 1.0),
+        axis.title.x = element_text(face = "bold"),
+        axis.title.y = element_text(face = "bold"), 
+        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
+        axis.text.x = element_text(colour = "darkblue", angle = -40, vjust = -0.7),
+        axis.text.y = element_text(colour = "darkblue"),
+        panel.border = element_rect(colour = "black", fill = NA, linewidth = 2),
+        panel.background = element_rect(fill = "grey50"),
+        plot.background = element_rect(colour = "black", linewidth = 2, fill = "lightblue"),
+        panel.grid.minor = element_blank()
+        )
+
+top10
+
+```
+
+This bar graph shows us the top 10 most spoken languages worldwide. Based on this visualization we can see that English is the most popular language in the globally, with almost 1.5 billion speakers. This graph also shows that Chinese is the second most spoken language followed by Hindi.
+
+# Most Popular Language Families
+
+```{r, message=FALSE, echo=FALSE, fig.cap= "Figure 2: Language Families"}
+family_data <- dataset %>%
+  group_by(Family) %>%
+  summarise(Total.speakers = sum(Total.speakers.L1.L2.)) 
+
+FAMILY <- factor(family_data$Family, levels = (family_data$Family))
+family_pie <- ggplot(family_data, aes(x="", y = Total.speakers, fill = FAMILY)) + 
+  geom_bar(width = 1, stat = "identity", color = "black", linewidth = 0.25) + 
+  coord_polar(theta ="y") +
+  xlab(NULL) + 
+  ylab(NULL)+
+  ggtitle("LANGUAGE FAMILIES") +
+  geom_text(aes(label = paste0(round(Total.speakers/sum(Total.speakers)*100), "%")), 
+            position = position_stack(vjust = 0.5), size = 3) +
+  theme_void() +
+  theme(plot.title = element_text(face = "bold.italic", size = 17, hjust = 0.5),
+        legend.title = element_text(face = "bold"),
+        legend.key = element_rect(fill = "black", colour = "white", linewidth = 0.2),
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(2, "lines"),
+        panel.border = element_rect(colour = "black", fill = NA, linewidth = 2),
+        panel.background = element_rect(fill = "grey50"),
+        plot.background = element_rect(colour = "black", linewidth = 2, fill = "lightblue"),
+        )
+
+family_pie
+
+```
+
+This graphic shows the relative sizes of different language families in the world. From observation of the figure, we can see that the Indo-European language family is the most prominent in the world, with English being one of its largest and most widely spoken members. English creole is not a language family, but rather a group of creole languages based on English, which incorporate vocabulary and grammatical structures from African, Caribbean, and other languages. The second most prominent language family shown by the graphic is Sino-Tibetan, which includes many languages spoken in East Asia, Southeast Asia, and South Asia.
+
+# Map Of Indo-European Speaking Countries
+```{r, message=FALSE, echo=FALSE, fig.cap= "Figure 3: Map of Indo-European speaking Countries"}
+
+country = c("Albania", "Armenia", "Austria", "Azerbaijan", "Belarus", 
+              "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", 
+              "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", 
+              "France", "Georgia", "Germany", "Greece", "Hungary", "Iceland", 
+              "Ireland", "Italy", "Kazakhstan", "Latvia", "Liechtenstein", 
+              "Lithuania", "Luxembourg", "Macedonia", "Malta", "Moldova", 
+              "Monaco", "Montenegro", "Netherlands", "Norway", "Poland", 
+              "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", 
+              "Slovenia", "Spain", "Sweden", "Switzerland", "Turkey", "Ukraine", 
+              "United Kingdom")
+          
+world_map <- map_data("world")
+
+world_map <- mutate(world_map, fill = case_when(
+  region %in% country ~ "red", 
+  TRUE ~ "grey"))
+
+ggplot(world_map, aes(long, lat, fill = fill, group = group)) +
+  geom_map(map = world_map, aes(map_id = region), color="grey") +
+  geom_polygon(colour="black", linewidth = 0.1) +
+  coord_equal() +
+  theme_void() +
+  theme_map() +
+  theme_void() +
+  theme(
+    panel.border = element_rect(color = "white", fill = NA),
+    plot.background = element_rect(fill = "white"),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.box.margin = margin(10, 10, 10, 10),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 10),
+    plot.title = element_text(size = 20, family = "Helvetica", face = "bold"),
+    plot.subtitle = element_text(size = 14, family = "Helvetica"),
+    plot.caption = element_text(size = 10, family = "Helvetica")
+  ) +
+  scale_fill_identity() +
+   labs(title = "Map of Indo-European Speaking Countries", 
+        subtitle = "Source: Maps library",
+        caption = "Data from https://www.kaggle.com/datasets/rajkumarpandey02/list-of-languages-by-total-number-of-speakers") +
+  guides(fill = guide_legend(reverse = TRUE))
+
+
+```
+The map output above shows a map of the world where countries that are part of the Indo-European language family are highlighted in red, while the other countries are in gray.
+
+
+# References
+
+United Nations, Department of Economic and Social Affairs, Population Division (2019). World Population Prospects 2019, Online Edition. Rev. 1. Retrieved from https://population.un.org/wpp/
+
+Wikipedia contributors. (2022, March 14). List of languages by total number of speakers. In Wikipedia, The Free Encyclopedia. Retrieved 06:40, April 2, 2023, from https://en.wikipedia.org/w/index.php?title=List_of_languages_by_total_number_of_speakers&oldid=1119330648
+
+World Atlas. (2022). The Most Spoken Languages in the World. Retrieved from https://www.worldatlas.com/articles/the-most-spoken-languages-in-the-world.html
+
+
