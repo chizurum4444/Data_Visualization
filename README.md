@@ -1,5 +1,5 @@
 # data_visualization_project
-Data visualization on a language dataset.
+Data visualization on a dataset of all languages worldwide !
 <img width="987" alt="Screenshot 2023-09-13 at 1 36 10 AM" src="https://github.com/chizurum4444/Data_Visualization/assets/60327767/f90e978c-e25d-472c-9b1e-4762ed118f9c">
 
 <img width="987" alt="Screenshot 2023-09-13 at 1 36 18 AM" src="https://github.com/chizurum4444/Data_Visualization/assets/60327767/8e6e5ed5-d613-4bb5-9054-54402b0cfed7">
